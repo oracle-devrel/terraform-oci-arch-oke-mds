@@ -23,6 +23,9 @@
         "dst": "variables.tf"
       },
       {
+        "src_pattern": "scripts/*"
+      },
+      {
         "src": "orm/provider.tf",
         "dst": "provider.tf"
       },
