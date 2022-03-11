@@ -1,0 +1,457 @@
+## Copyright (c) 2022, Oracle and/or its affiliates. 
+## All rights reserved. The Universal Permissive License (UPL), Version 1.0 as shown at http://oss.oracle.com/licenses/upl
+
+    title: "Create Kubernetes Engine Cluster with MDS in Oracle Cloud Infrastructure"
+    stackDescription: "Deploy Kubernetes Engine Cluster (OKE) with MySQL Database Service (MDS) in Oracle Cloud Infrastructure."
+    schemaVersion: 1.1.0
+    version: "20190404"
+    locale: "en"
+
+    variableGroups:
+    - title: General Configuration
+      visible: false
+      variables:
+      - tenancy_ocid
+      - region
+      - release
+      - campaign
+      - instance_os
+      - linux_os_version
+      - availablity_domain_number
+      - mysql_db_system_display_name
+      - mysql_db_system_description
+      - mysql_db_system_maintenance_window_start_time
+      - mysql_db_system_hostname_label
+      - mysql_db_system_fault_domain
+
+    - title: Required Configuration 
+      visible: true  
+      variables:
+      - compartment_ocid
+      - availability_domain_name
+      - admin_password
+      - show_advanced
+
+    - title: Networking Optional Configuration
+      visible: 
+          and:
+            - show_advanced
+      variables:
+      - VCN-CIDR
+      - OKE_LB_Subnet-CIDR
+      - OKE_API_EndPoint_Subnet-CIDR
+      - OKE_NodePool_Subnet-CIDR
+      - Bastion_Subnet-CIDR
+      - MDS_Subnet-CIDR
+
+    - title: Bastion Optional Configuration
+      visible: 
+          and:
+          - show_advanced
+      variables:
+      - ssh_public_key
+      - node_shape
+      - instance_os
+      - BastionShape
+      - BastionFlexShapeOCPUS
+      - BastionFlexShapeMemory
+
+    - title: Kubernetes Clusters Optional Configuration
+      visible: 
+          and:
+            - show_advanced
+      variables:
+      - cluster_kube_config_token_version
+      - cluster_options_kubernetes_network_config_pods_cidr
+      - cluster_options_kubernetes_network_config_services_cidr
+      - kubernetes_version
+      - cluster_name
+      - node_pool_name
+      - node_pool_size
+      - node_pool_shape
+      - node_pool_flex_shape_memory
+      - node_pool_flex_shape_ocpus
+
+    - title: MDS Optional Configuration
+      visible: 
+        and:
+          - show_advanced
+      variables:
+      - admin_username
+      - mysql_shape      
+      - mds_instance_name
+      - mysql_db_system_data_storage_size_in_gb
+      - mysql_is_highly_available
+
+    variables:
+
+      show_advanced:
+        type: boolean
+        title: "Show advanced options?"
+        description: "Shows advanced options."
+        visible: true
+        default: false
+      
+      compartment_ocid:
+        type: oci:identity:compartment:id
+        required: true
+        visibile: true
+        title: Compartment
+        description: "Compartment where you want to create the solution resources"
+
+      region:
+        type: oci:identity:region:name
+        required: true
+        visibile: true
+        title: Region
+        description: "Region where you want to deploy the resources defined by this stack."
+
+      availability_domain_name:
+        type: oci:identity:availabilitydomain:name
+        required: true
+        visibile: true
+        title: "Availability Domain to be chosen"
+        description: "Availability Domain to be chosen"
+        dependsOn:
+          compartmentId: ${compartment_ocid}
+
+      admin_password:
+        type: password
+        required: true
+        visibile: true
+        title: "MDS Admin Password"
+        description: "Type MDS Admin Password"
+        minLength: 9
+        maxLength: 30
+        pattern: ^[A-Za-z][A-Za-z0-9_#\$]+$ 
+
+
+      # Optional Configuration     
+
+      VCN-CIDR:
+        type: string
+        visible: true
+        required: false
+        pattern: "^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\/(3[0-2]|[1-2]?[0-9])$"
+        title: "VCN CIDR"
+        description: "Choose VCN CIDR for your OKE deployments."
+        default: "10.0.0.0/16"
+
+      OKE_LB_Subnet-CIDR:
+        type: string
+        visible: true
+        required: false
+        pattern: "^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\/(3[0-2]|[1-2]?[0-9])$"
+        title: "OKE LB Subnet CIDR"
+        description: "Choose OKE LoadBalancer Subnet CIDR."
+        default: "10.0.10.0/24"
+
+      OKE_API_EndPoint_Subnet-CIDR:
+        type: string
+        visible: true
+        required: false
+        pattern: "^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\/(3[0-2]|[1-2]?[0-9])$"
+        title: "OKE API EndPoint Subnet CIDR"
+        description: "Choose OKE API EndPoint Subnet CIDR."
+        default: "10.0.20.0/24"
+
+      OKE_NodePool_Subnet-CIDR:
+        type: string
+        visible: true
+        required: false
+        pattern: "^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\/(3[0-2]|[1-2]?[0-9])$"
+        title: "OKE NodePool Subnet CIDR"
+        description: "Choose OKE NodePool Subnet CIDR."
+        default: "10.0.30.0/24"
+
+      Bastion_Subnet-CIDR:
+        type: string
+        visible: true
+        required: false
+        pattern: "^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\/(3[0-2]|[1-2]?[0-9])$"
+        title: "Bastion Subnet CIDR"
+        description: "Choose Bastion Subnet CIDR."
+        default: "10.0.40.0/24"
+
+      MDS_Subnet-CIDR:
+        type: string
+        visible: true
+        required: false
+        pattern: "^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\/(3[0-2]|[1-2]?[0-9])$"
+        title: "MDS Subnet CIDR"
+        description: "Choose MDS Subnet CIDR."
+        default: "10.0.50.0/24"
+
+      cluster_kube_config_token_version:
+        type: enum
+        visible: true
+        required: false
+        title: "OKE Cluster Kube Config Token Version"
+        description: "Choose OKE Cluster Kube Config Token Version."
+        default: "2.0.0"
+        enum:
+          - "2.0.0"
+      
+      cluster_options_kubernetes_network_config_pods_cidr:
+        type: string
+        visible: true
+        required: false
+        pattern: "^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\/(3[0-2]|[1-2]?[0-9])$"
+        title: "OKE PODs CIDR"
+        description: "Choose OKE PODs CIDR."
+
+      cluster_options_kubernetes_network_config_services_cidr:
+        type: string
+        visible: true
+        required: false
+        pattern: "^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9]).(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\/(3[0-2]|[1-2]?[0-9])$"
+        title: "OKE Services CIDR"
+        description: "Choose OKE Services CIDR."
+
+      kubernetes_version:
+        type: enum
+        visible: true
+        required: false
+        title: "Kubernetes Version"
+        description: "Choose Kubernetes Version."
+        default: "v1.21.5"
+        enum:
+          - "v1.21.5"
+          - "v1.20.11"
+          - "v1.20.8"
+          - "v1.19.15"
+          - "v1.19.12"
+          - "v1.19.7"          
+          - "v1.18.10"  
+
+      cluster_name:
+        type: string
+        visible: true
+        required: false
+        title: "OKE Cluster Name"
+        description: "Choose OKE Cluster Name."
+
+      node_pool_name:
+        type: string
+        visible: true
+        required: false
+        title: "OKE NodePool Name"
+        description: "Choose OKE NodePool Name."
+
+      node_pool_size:
+        type: number
+        required: false
+        minimum: 2
+        maximum: 32768
+        multipleOf: 1
+        default: 3
+        title: "OKE NodePool size"
+        description: "Choose size of the OKE NodePool."
+
+      node_pool_shape:
+        type: oci:core:instanceshape:name
+        required: false
+        title: "Shape for OKE NodePool"
+        description: "Choose shape for compute instances in OKE NodePool."
+        default: "VM.Standard.E4.Flex"
+        dependsOn:
+          compartmentId: ${compartment_ocid}      
+
+      node_pool_flex_shape_ocpus:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 1
+        title: "Flex Shape OCPUs"
+        description: "Choose number of OCPUs for Flex Shape."
+        visible:
+          and:
+            - or:
+              - eq:
+                - node_pool_shape 
+                - "VM.Standard.E3.Flex"
+              - eq:
+                - node_pool_shape 
+                - "VM.Standard.E4.Flex"
+              - eq:
+                - node_pool_shape
+                - "VM.Optimized3.Flex"
+              - eq:
+                - node_pool_shape
+                - "VM.Standard.A1.Flex"
+
+      node_pool_flex_shape_memory:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 10
+        title: "Flex Shape Memory (GB)"
+        description: "Choose number GB for Flex Shape Memory."
+        visible:
+          and:
+            - or:
+              - eq:
+                - node_pool_shape 
+                - "VM.Standard.E3.Flex"
+              - eq:
+                - node_pool_shape
+                - "VM.Standard.E4.Flex"
+              - eq:
+                - node_pool_shape
+                - "VM.Optimized3.Flex"  
+              - eq:
+                - node_pool_shape
+                - "VM.Standard.A1.Flex"
+
+      BastionShape:
+        type: oci:core:instanceshape:name
+        required: false
+        title: "Shape for Bastion Host"
+        description: "Choose shape for compute instances in Bastion Host."
+        default: "VM.Standard.E4.Flex"
+        dependsOn:
+          compartmentId: ${compartment_ocid}      
+
+      BastionFlexShapeOCPUS:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 1
+        title: "Flex Shape OCPUs"
+        description: "Choose number of OCPUs for Flex Shape."
+        visible:
+          and:
+            - or:
+              - eq:
+                - BastionShape 
+                - "VM.Standard.E3.Flex"
+              - eq:
+                - BastionShape 
+                - "VM.Standard.E4.Flex"
+              - eq:
+                - BastionShape
+                - "VM.Optimized3.Flex"
+              - eq:
+                - BastionShape
+                - "VM.Standard.A1.Flex"
+
+      BastionFlexShapeMemory:
+        type: number
+        required: false
+        minimum: 1
+        maximum: 128
+        multipleOf: 1
+        default: 1
+        title: "Flex Shape Memory (GB)"
+        description: "Choose number GB for Flex Shape Memory."
+        visible:
+          and:
+            - or:
+              - eq:
+                - BastionShape 
+                - "VM.Standard.E3.Flex"
+              - eq:
+                - BastionShape
+                - "VM.Standard.E4.Flex"
+              - eq:
+                - BastionShape
+                - "VM.Optimized3.Flex"  
+              - eq:
+                - BastionShape
+                - "VM.Standard.A1.Flex"
+      
+      ssh_public_key:
+        type: oci:core:ssh:publickey
+        title: "Public SSH Key"
+        description: "Choose public SSH Key to be uploaded into compute instances."
+
+      linux_os_version:
+        type: enum
+        required: false
+        visible: false
+        title: "Instance OS version"
+        description: "An Operating System version that determines the operating system version for WordPress host."
+        default: "8"
+        enum:
+          - "8"
+
+      instance_os:
+        type: enum
+        required: false
+        visible: false
+        title: "Instance OS"
+        description: "An Operating System that determines the operating system for WordPress host."
+        default: "Oracle Linux"
+        enum:
+          - "Oracle Linux"
+
+      admin_username:
+        type: string
+        required: false
+        title: "MDS Admin Username"
+        description: "Type MDS Admin username."
+
+      mysql_is_highly_available:
+        type: boolean
+        title: "MDS High Availability"
+        description: "Check if you want MDS to be configured in HA."
+        visible: true
+        default: false
+
+      mysql_shape:
+        type: enum
+        required: false
+        default: "MySQL.VM.Standard.E3.1.8GB"
+        title: "MDS Shape"
+        description: "Choose MySQL Database System Shape for your MDS deployments."
+        enum:
+          - "VM.Standard.E2.1"
+          - "VM.Standard.E2.2"
+          - "VM.Standard.E2.4"  
+          - "VM.Standard.E2.8"
+          - "MySQL.VM.Standard.E3.1.8GB"
+          - "MySQL.VM.Standard.E3.1.16GB"      
+          - "MySQL.VM.Standard.E3.2.32GB"
+          - "MySQL.VM.Standard.E3.4.64GB"
+          - "MySQL.VM.Standard.E3.8.128GB"
+          - "MySQL.VM.Standard.E3.16.256GB"
+          - "MySQL.VM.Standard.E3.24.384GB"
+          - "MySQL.VM.Standard.E3.32.512GB"
+          - "MySQL.VM.Standard.E3.48.768GB"    
+          - "MySQL.VM.Standard.E3.64.1024GB"  
+          - "MySQL.HeatWave.VM.Standard.E3" 
+
+      mysql_db_system_display_name:
+        type: string
+        required: true
+        title: "MDS display name"
+  
+      mysql_db_system_data_storage_size_in_gb:
+        type: number
+        title: "MDS Size in GB"
+        default: "50"
+
+      mysql_db_system_description:
+        type: string
+        required: true
+        title: "MDS description"
+
+      release:
+        type: string
+        required: false
+        visible: false
+        title: "Reference Architecture Release (OCI Architecture Center)"
+
+    outputs:
+
+      generated_ssh_private_key:
+        title: "Generated SSH Private Key"
+        displayText: "Generated SSH Private Key"
+        type: copyableString
+        visible: true
