@@ -5,13 +5,14 @@
 #  source        = "github.com/oracle-devrel/terraform-oci-arch-std-tags"
 #  tag_namespace = "terraform-oci-arch-oke-mds"
 #}
-
-module "create_policies" {
+locals {
+  defined_tags = module.policies.predefined_tags
+  # declare a local for defined tags to conceal from the rest of the module how we're creating them
+}
+module "policies" {
   source                        = "github.com/oracle-devrel/terraform-oci-arch-policies"
   activate_policies_for_service = ["OKE"]
   tenancy_ocid                  = var.tenancy_ocid
-  policy_compartment_ocid       = var.compartment_ocid
-  random_id                     = module.set_tags.random_id.tag.hex
-  region_name                   = var.region.name
-  defined_tags                  = module.set_tags.defined_tags
+  compartment_ocid              = var.compartment_ocid
+  region_name                   = var.region
 }
