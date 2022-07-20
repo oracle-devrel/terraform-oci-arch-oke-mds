@@ -5,13 +5,13 @@ resource "oci_core_vcn" "OKE_MDS_vcn" {
   cidr_block     = var.VCN-CIDR
   compartment_id = var.compartment_ocid
   display_name   = "OKE_MDS_vcn"
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags   = local.defined_tags
 }
 
 resource "oci_core_drg" "OKE_MDS_drg" {
   compartment_id = var.compartment_ocid
   display_name   = "OKE_MDS_drg"
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags   = local.defined_tags
 }
 
 resource "oci_core_drg_attachment" "oac_heatwave_drg_vcn_attachment" {
@@ -28,14 +28,14 @@ resource "oci_core_service_gateway" "OKE_MDS_sg" {
   services {
     service_id = lookup(data.oci_core_services.AllOCIServices.services[0], "id")
   }
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags = local.defined_tags
 }
 
 resource "oci_core_internet_gateway" "OKE_MDS_igw" {
   compartment_id = var.compartment_ocid
   display_name   = "OKE_MDS_igw"
   vcn_id         = oci_core_vcn.OKE_MDS_vcn.id
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags   = local.defined_tags
 }
 
 resource "oci_core_route_table" "OKE_MDS_rt_via_igw" {
@@ -48,14 +48,14 @@ resource "oci_core_route_table" "OKE_MDS_rt_via_igw" {
     destination_type  = "CIDR_BLOCK"
     network_entity_id = oci_core_internet_gateway.OKE_MDS_igw.id
   }
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags = local.defined_tags
 }
 
 resource "oci_core_nat_gateway" "OKE_MDS_natgw" {
   compartment_id = var.compartment_ocid
   display_name   = "OKE_MDS_natgw"
   vcn_id         = oci_core_vcn.OKE_MDS_vcn.id
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags   = local.defined_tags
 }
 
 resource "oci_core_route_table" "OKE_MDS_rt_via_natgw" {
@@ -69,14 +69,14 @@ resource "oci_core_route_table" "OKE_MDS_rt_via_natgw" {
     network_entity_id = oci_core_nat_gateway.OKE_MDS_natgw.id
   }
 
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags = local.defined_tags
 }
 
 resource "oci_core_security_list" "OKE_MDS_api_endpoint_subnet_sec_list" {
   compartment_id = var.compartment_ocid
   display_name   = "OKE_MDS_api_endpoint_subnet_sec_list"
   vcn_id         = oci_core_vcn.OKE_MDS_vcn.id
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags   = local.defined_tags
 
   # egress_security_rules
 
@@ -154,7 +154,7 @@ resource "oci_core_security_list" "OKE_MDS_nodepool_subnet_sec_list" {
   compartment_id = var.compartment_ocid
   display_name   = "OKE_MDS_nodepool_subnet_sec_list"
   vcn_id         = oci_core_vcn.OKE_MDS_vcn.id
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags   = local.defined_tags
 
   egress_security_rules {
     protocol         = "All"
@@ -242,7 +242,7 @@ resource "oci_core_security_list" "OKE_MDS_mds_subnet_sec_list" {
   compartment_id = var.compartment_ocid
   display_name   = "OKE_MDS_mds_subnet_sec_list"
   vcn_id         = oci_core_vcn.OKE_MDS_vcn.id
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags   = local.defined_tags
 
   egress_security_rules {
     destination = "0.0.0.0/0"
@@ -330,56 +330,56 @@ resource "oci_core_security_list" "OKE_MDS_mds_subnet_sec_list" {
 }
 
 resource "oci_core_subnet" "OKE_MDS_bastion_subnet" {
-  cidr_block     = var.Bastion_Subnet-CIDR
-  compartment_id = var.compartment_ocid
-  vcn_id         = oci_core_vcn.OKE_MDS_vcn.id
-  display_name   = "OKE_MDS_bastion_subnet"
+  cidr_block        = var.Bastion_Subnet-CIDR
+  compartment_id    = var.compartment_ocid
+  vcn_id            = oci_core_vcn.OKE_MDS_vcn.id
+  display_name      = "OKE_MDS_bastion_subnet"
   security_list_ids = [oci_core_vcn.OKE_MDS_vcn.default_security_list_id]
   route_table_id    = oci_core_route_table.OKE_MDS_rt_via_igw.id
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  defined_tags      = local.defined_tags
 }
 
 resource "oci_core_subnet" "OKE_MDS_lb_subnet" {
-  cidr_block     = var.OKE_LB_Subnet-CIDR
-  compartment_id = var.compartment_ocid
-  vcn_id         = oci_core_vcn.OKE_MDS_vcn.id
-  display_name   = "OKE_MDS_lb_subnet"
+  cidr_block                 = var.OKE_LB_Subnet-CIDR
+  compartment_id             = var.compartment_ocid
+  vcn_id                     = oci_core_vcn.OKE_MDS_vcn.id
+  display_name               = "OKE_MDS_lb_subnet"
   prohibit_public_ip_on_vnic = true
-  security_list_ids = [oci_core_vcn.OKE_MDS_vcn.default_security_list_id]
-  route_table_id    = oci_core_route_table.OKE_MDS_rt_via_igw.id
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  security_list_ids          = [oci_core_vcn.OKE_MDS_vcn.default_security_list_id]
+  route_table_id             = oci_core_route_table.OKE_MDS_rt_via_igw.id
+  defined_tags               = local.defined_tags
 }
 
 resource "oci_core_subnet" "OKE_MDS_api_endpoint_subnet" {
-  cidr_block        = var.OKE_API_EndPoint_Subnet-CIDR
-  compartment_id    = var.compartment_ocid
-  vcn_id            = oci_core_vcn.OKE_MDS_vcn.id
-  display_name      = "OKE_MDS_api_endpoint_subnet"
+  cidr_block                 = var.OKE_API_EndPoint_Subnet-CIDR
+  compartment_id             = var.compartment_ocid
+  vcn_id                     = oci_core_vcn.OKE_MDS_vcn.id
+  display_name               = "OKE_MDS_api_endpoint_subnet"
   prohibit_public_ip_on_vnic = true
-  security_list_ids = [oci_core_vcn.OKE_MDS_vcn.default_security_list_id, oci_core_security_list.OKE_MDS_api_endpoint_subnet_sec_list.id]
-  route_table_id    = oci_core_route_table.OKE_MDS_rt_via_igw.id
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  security_list_ids          = [oci_core_vcn.OKE_MDS_vcn.default_security_list_id, oci_core_security_list.OKE_MDS_api_endpoint_subnet_sec_list.id]
+  route_table_id             = oci_core_route_table.OKE_MDS_rt_via_igw.id
+  defined_tags               = local.defined_tags
 }
 
 resource "oci_core_subnet" "OKE_MDS_nodepool_subnet" {
-  cidr_block        = var.OKE_NodePool_Subnet-CIDR
-  compartment_id    = var.compartment_ocid
-  vcn_id            = oci_core_vcn.OKE_MDS_vcn.id
-  display_name      = "OKE_MDS_nodepool_subnet"
+  cidr_block                 = var.OKE_NodePool_Subnet-CIDR
+  compartment_id             = var.compartment_ocid
+  vcn_id                     = oci_core_vcn.OKE_MDS_vcn.id
+  display_name               = "OKE_MDS_nodepool_subnet"
   prohibit_public_ip_on_vnic = true
-  security_list_ids = [oci_core_vcn.OKE_MDS_vcn.default_security_list_id, oci_core_security_list.OKE_MDS_nodepool_subnet_sec_list.id]
-  route_table_id    = oci_core_route_table.OKE_MDS_rt_via_natgw.id
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  security_list_ids          = [oci_core_vcn.OKE_MDS_vcn.default_security_list_id, oci_core_security_list.OKE_MDS_nodepool_subnet_sec_list.id]
+  route_table_id             = oci_core_route_table.OKE_MDS_rt_via_natgw.id
+  defined_tags               = local.defined_tags
 }
 
 resource "oci_core_subnet" "OKE_MDS_mds_subnet" {
-  cidr_block        = var.MDS_Subnet-CIDR
-  compartment_id    = var.compartment_ocid
-  vcn_id            = oci_core_vcn.OKE_MDS_vcn.id
-  display_name      = "OKE_MDS_mds_subnet"
+  cidr_block                 = var.MDS_Subnet-CIDR
+  compartment_id             = var.compartment_ocid
+  vcn_id                     = oci_core_vcn.OKE_MDS_vcn.id
+  display_name               = "OKE_MDS_mds_subnet"
   prohibit_public_ip_on_vnic = true
-  security_list_ids = [oci_core_vcn.OKE_MDS_vcn.default_security_list_id, oci_core_security_list.OKE_MDS_mds_subnet_sec_list.id]
-  route_table_id    = oci_core_route_table.OKE_MDS_rt_via_natgw.id
-  defined_tags   = { "${oci_identity_tag_namespace.ArchitectureCenterTagNamespace.name}.${oci_identity_tag.ArchitectureCenterTag.name}" = var.release }
+  security_list_ids          = [oci_core_vcn.OKE_MDS_vcn.default_security_list_id, oci_core_security_list.OKE_MDS_mds_subnet_sec_list.id]
+  route_table_id             = oci_core_route_table.OKE_MDS_rt_via_natgw.id
+  defined_tags               = local.defined_tags
 }
 
