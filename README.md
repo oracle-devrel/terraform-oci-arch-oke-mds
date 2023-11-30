@@ -13,8 +13,6 @@ For details of the architecture, see [_Deploy Cloud Native Apps that use MySQL t
 ## Prerequisites
 
 - Permission to `manage` the following types of resources in your Oracle Cloud Infrastructure tenancy: `vcns`, `internet-gateways`, `route-tables`, `security-lists`, `subnets`, `mysql-family`, and `instances`.
-
-- Policy on OCI tenancy root compartment level to allow OKE to manange the resources: `allow service OKE to manage all-resources in tenancy`.
  
 - Quota to create the following resources: 1 VCN, 5 subnets, 1 Internet Gateway, 1 NAT Gateway, 3 route rules, 1 MySQL Database Instance, 1 Compute Instance (BastionVM) and 1 OKE Cluster with 3 worker nodes.
 
